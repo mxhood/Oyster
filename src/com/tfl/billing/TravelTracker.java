@@ -16,6 +16,14 @@ public class TravelTracker implements ScanListener {
     private final List<JourneyEvent> eventLog = new ArrayList<JourneyEvent>();
     private final Set<UUID> currentlyTravelling = new HashSet<UUID>();
 
+    public List<JourneyEvent> getEventLog() {
+        return eventLog;
+    }
+
+    public Set<UUID> getCurrentlyTravelling() {
+        return currentlyTravelling;
+    }
+
     public void chargeAccounts() {
         CustomerDatabase customerDatabase = CustomerDatabase.getInstance();
 
