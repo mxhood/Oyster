@@ -22,46 +22,31 @@ public class TravelTrackerTest{
     //}
 
     @Test
+    //tests totalJourneysFor method for if account is charged the right amount depending on if traveling during peak or off peak hours
     public void testChargeAccount(){
         TravelTracker travel = new TravelTracker();
-        // force journey to be in zone 1
-        // force journey to be off peak
-        // see what it charges
+
         CustomerDatabase customerDatabase = CustomerDatabase.getInstance();
         Customer customer = customerDatabase.getCustomers().get(0);
         OysterCard card = new OysterCard("38400000-8cf0-11bd-b23e-10b96e4ef00d");
-        //Customer customer = new Customer("Fred Bloggs", card);
+
         OysterCardReader reader = new OysterCardReader();
         OysterCardReader paddingtonReader = OysterReaderLocator.atStation(Station.PADDINGTON);
         OysterCardReader kingsCrossReader = OysterReaderLocator.atStation(Station.KINGS_CROSS);
-        //JourneyStart start = new JourneyStart(card.id(), reader.id());
-        //JourneyEnd end = new JourneyEnd(card.id(), reader.id());
-        //Journey journey1 = new Journey(start, end);
+
         travel.connect(paddingtonReader, kingsCrossReader);
         paddingtonReader.touch(card);
         kingsCrossReader.touch(card);
-        //BigDecimal expected = new BigDecimal(2.40);
-        //expected = expected.ROUND_HALF_UP;
 
-        assertEquals(2.40, travel.totalJourneysFor(customer).doubleValue(), 0);
-    }
+        long currentTime = System.currentTimeMillis();
+        Date currentDate = new Date(currentTime);
 
-    @Test
-    public void testPeak(){
-        TravelTracker travel = new TravelTracker();
-        // year month date hour minute
-        Date date1 = new Date(2011,12,12,6,0);
-        boolean result1 = travel.peak(date1);
+        if(travel.peak(currentDate)){
+            assertEquals(3.20, travel.totalJourneysFor(customer).doubleValue(), 0);
+        }else{
+            assertEquals(2.40, travel.totalJourneysFor(customer).doubleValue(), 0);
+        }
 
-        Date date2 = new Date(2011,12,12,0,0);
-        boolean result2 = travel.peak(date2);
-
-        Date date3 = new Date(2011,12,12,18,0);
-        boolean result3 = travel.peak(date3);
-
-        assertTrue(result1);
-        assertFalse(result2);
-        assertTrue(result3);
     }
 
     // Testing the cardScanned method for cases where they're ending the journey

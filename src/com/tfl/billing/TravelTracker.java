@@ -16,14 +16,6 @@ public class TravelTracker implements ScanListener {
     private final List<JourneyEvent> eventLog = new ArrayList<JourneyEvent>();
     private final Set<UUID> currentlyTravelling = new HashSet<UUID>();
 
-    public List<JourneyEvent> getEventLog() {
-        return eventLog;
-    }
-
-    public Set<UUID> getCurrentlyTravelling() {
-        return currentlyTravelling;
-    }
-
     public void chargeAccounts() {
         CustomerDatabase customerDatabase = CustomerDatabase.getInstance();
 
@@ -33,8 +25,7 @@ public class TravelTracker implements ScanListener {
         }
     }
 
-    //changed to public big decimal
-    public BigDecimal totalJourneysFor(Customer customer) {
+    private void totalJourneysFor(Customer customer) {
         List<JourneyEvent> customerJourneyEvents = new ArrayList<JourneyEvent>();
         for (JourneyEvent journeyEvent : eventLog) {
             if (journeyEvent.cardId().equals(customer.cardId())) {
@@ -55,7 +46,6 @@ public class TravelTracker implements ScanListener {
             }
         }
 
-
         BigDecimal customerTotal = new BigDecimal(0);
         for (Journey journey : journeys) {
             BigDecimal journeyPrice = OFF_PEAK_JOURNEY_PRICE;
@@ -66,7 +56,6 @@ public class TravelTracker implements ScanListener {
         }
 
         PaymentsSystem.getInstance().charge(customer, journeys, roundToNearestPenny(customerTotal));
-        return roundToNearestPenny(customerTotal);
     }
 
     private BigDecimal roundToNearestPenny(BigDecimal poundsAndPence) {
@@ -77,8 +66,7 @@ public class TravelTracker implements ScanListener {
         return peak(journey.startTime()) || peak(journey.endTime());
     }
 
-    // Changed to public to make it available for testing
-    public boolean peak(Date time) {
+    private boolean peak(Date time) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(time);
         int hour = calendar.get(Calendar.HOUR_OF_DAY);
