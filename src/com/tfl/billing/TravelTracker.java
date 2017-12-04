@@ -10,8 +10,12 @@ import java.util.*;
 
 public class TravelTracker implements ScanListener {
 
-    static final BigDecimal OFF_PEAK_JOURNEY_PRICE = new BigDecimal(2.40);
-    static final BigDecimal PEAK_JOURNEY_PRICE = new BigDecimal(3.20);
+    //static final BigDecimal OFF_PEAK_JOURNEY_PRICE = new BigDecimal(2.40);
+    //static final BigDecimal PEAK_JOURNEY_PRICE = new BigDecimal(3.20);
+    static final BigDecimal PEAK_LONG = new BigDecimal(3.80);
+    static final BigDecimal OFF_PEAK_LONG = new BigDecimal(2.70);
+    static final BigDecimal PEAK_SHORT = new BigDecimal(2.90);
+    static final BigDecimal OFF_PEAK_SHORT = new BigDecimal(1.60);
 
     private final List<JourneyEvent> eventLog = new ArrayList<JourneyEvent>();
     private final Set<UUID> currentlyTravelling = new HashSet<UUID>();
@@ -47,12 +51,30 @@ public class TravelTracker implements ScanListener {
         }
 
         BigDecimal customerTotal = new BigDecimal(0);
-        for (Journey journey : journeys) {
-            BigDecimal journeyPrice = OFF_PEAK_JOURNEY_PRICE;
-            if (peak(journey)) {
-                journeyPrice = PEAK_JOURNEY_PRICE;
+        // Checks all journeys for if it includes a peak journey. Necessary for cap implementation.
+        boolean includesPeak = false;
+        for (Journey journey1 : journeys) {
+            if (journey1.getPeak()) {
+                includesPeak = true;
             }
-            customerTotal = customerTotal.add(journeyPrice);
+        }
+
+        for (Journey journey : journeys) {
+            // Initiate journey price as the lowest cost trip.
+            BigDecimal journeyPrice = OFF_PEAK_SHORT;
+            if (journey.getPeak() && journey.durationSeconds() < 1500) {
+                journeyPrice = PEAK_SHORT;
+            } else if (journey.getPeak() && journey.durationSeconds() >= 1500) {
+                journeyPrice = PEAK_LONG;
+            } else if (!journey.getPeak() && journey.durationSeconds() >= 1500) {
+                journeyPrice = OFF_PEAK_LONG;
+            }
+            // Don't check for off peak short because it's default.
+            if (includesPeak && customerTotal.compareTo(new BigDecimal(9.00)) == -1) {
+                customerTotal = customerTotal.add(journeyPrice);
+            } else if (!includesPeak && customerTotal.compareTo(new BigDecimal(7.00)) == -1) {
+                customerTotal = customerTotal.add(journeyPrice);
+            }
         }
 
         PaymentsSystem.getInstance().charge(customer, journeys, roundToNearestPenny(customerTotal));
@@ -60,17 +82,6 @@ public class TravelTracker implements ScanListener {
 
     private BigDecimal roundToNearestPenny(BigDecimal poundsAndPence) {
         return poundsAndPence.setScale(2, BigDecimal.ROUND_HALF_UP);
-    }
-
-    private boolean peak(Journey journey) {
-        return peak(journey.startTime()) || peak(journey.endTime());
-    }
-
-    private boolean peak(Date time) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(time);
-        int hour = calendar.get(Calendar.HOUR_OF_DAY);
-        return (hour >= 6 && hour <= 9) || (hour >= 17 && hour <= 19);
     }
 
     public void connect(OysterCardReader... cardReaders) {
